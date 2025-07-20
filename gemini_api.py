@@ -10,6 +10,8 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 @app.route('/precaution', methods=['POST'])
 def get_precaution():
     data= request.json
+    print("🔔 Received request:", data)
+
     disease = data.get("disease","")
 
     if not disease:
@@ -21,6 +23,7 @@ def get_precaution():
         response = model.generate_content(prompt)
         return jsonify({"Precaution": response.text})
     except Exception as e:
+        print("🧠 Gemini suggestion:", precaution_text)
         return jsonify({"error":str(e)}), 500
 if __name__=='__main__' :
     app.run(debug=True)   

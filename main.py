@@ -19,7 +19,7 @@ class_names = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_r
                       'Tomato___healthy']
 #Precaution 
 # Use the secret key from the .toml file
-genai.configure(api_key=st.secrets["AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY"])
+genai.configure(api_key="AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
 # def get_precaution_from_ai(disease_name):
@@ -34,20 +34,34 @@ model = genai.GenerativeModel("gemini-1.5-flash")
 #         return response.text
 #     except Exception as e:
 #         return "⚠️ Could not fetch suggestions right now. Please try again later."
+#Yo chai precaution tips lai 
+# def get_precaution_from_ai(disease_name):
+#     try:
+#         res = requests.post(
+#             "http://localhost:5000/get_precaution",
+#             json={"disease": disease_name}
+#         )
+#         if res.status_code == 200:
+#             return res.json()["precaution"]
+#         else:
+#             return "⚠️ Could not fetch suggestions right now. Please try again later."
+#     except:
+#         return "⚠️ Gemini service unreachable. Please check the Flask server."
 import requests
-
 def get_precaution_from_ai(disease_name):
     try:
         res = requests.post(
-            "http://localhost:5001/get_precaution",
-            json={"disease": disease_name}
+            "http://localhost:5000/precaution",
+            json={"disease": disease_name},
+            timeout=10
         )
         if res.status_code == 200:
-            return res.json()["precaution"]
+            return res.json().get("Precaution", "⚠️ Could not parse suggestions.")
         else:
             return "⚠️ Could not fetch suggestions right now. Please try again later."
-    except:
-        return "⚠️ Gemini service unreachable. Please check the Flask server."
+    except Exception as e:
+        return f"⚠️ Gemini service unreachable: {str(e)}"
+
 
 
 #Model Prediction
@@ -183,4 +197,8 @@ elif(app_mode=="Disease Recognition"):
                     'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 
                     'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus',
                       'Tomato___healthy']
-        st.success("Model is Predicting it's a {}".format(class_name[result_index]))
+        
+        st.success(f"Model is Predicting it's a {predicted_disease}")
+        tips = get_precaution_from_ai(predicted_disease)
+        st.markdown(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{tips}")
+
