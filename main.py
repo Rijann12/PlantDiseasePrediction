@@ -1,16 +1,74 @@
 import streamlit as st
 import tensorflow as tf
 import numpy as np
+import google.generativeai as genai
+
+class_names = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
+                    'Blueberry___healthy', 'Cherry_(including_sour)___Powdery_mildew', 
+                    'Cherry_(including_sour)___healthy', 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 
+                    'Corn_(maize)___Common_rust_', 'Corn_(maize)___Northern_Leaf_Blight', 'Corn_(maize)___healthy', 
+                    'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 
+                    'Grape___healthy', 'Orange___Haunglongbing_(Citrus_greening)', 'Peach___Bacterial_spot',
+                    'Peach___healthy', 'Pepper,_bell___Bacterial_spot', 'Pepper,_bell___healthy', 
+                    'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy', 
+                    'Raspberry___healthy', 'Soybean___healthy', 'Squash___Powdery_mildew', 
+                    'Strawberry___Leaf_scorch', 'Strawberry___healthy', 'Tomato___Bacterial_spot', 
+                    'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold', 
+                    'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 
+                    'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus',
+                      'Tomato___healthy']
+#Precaution 
+# Use the secret key from the .toml file
+genai.configure(api_key=st.secrets["AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY"])
+model = genai.GenerativeModel("gemini-1.5-flash")
+
+# def get_precaution_from_ai(disease_name):
+#     prompt = f"What are the prevention and treatment tips for the plant disease called '{disease_name}'?"
+#     response = model.generate_content(prompt)
+#     return response.text
+
+# def get_precaution_from_ai(disease_name):
+#     prompt = f"What are the prevention and treatment tips for the plant disease called '{disease_name}'? Provide a clear, brief list."
+#     try:
+#         response = model.generate_content(prompt)
+#         return response.text
+#     except Exception as e:
+#         return "⚠️ Could not fetch suggestions right now. Please try again later."
+import requests
+
+def get_precaution_from_ai(disease_name):
+    try:
+        res = requests.post(
+            "http://localhost:5001/get_precaution",
+            json={"disease": disease_name}
+        )
+        if res.status_code == 200:
+            return res.json()["precaution"]
+        else:
+            return "⚠️ Could not fetch suggestions right now. Please try again later."
+    except:
+        return "⚠️ Gemini service unreachable. Please check the Flask server."
 
 
-#Tensorflow Model Prediction
+#Model Prediction
 def model_prediction(test_image):
     model = tf.keras.models.load_model("trained_plant_disease_model.h5")
-    image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
+    image = tf.keras.preprocessing.image.load_img(test_image, target_size=(128, 128))
     input_arr = tf.keras.preprocessing.image.img_to_array(image)
-    input_arr = np.array([input_arr]) #convert single image to batch
+    input_arr = np.expand_dims(input_arr, axis=0)  # convert to batch
     predictions = model.predict(input_arr)
-    return np.argmax(predictions) #return index of max element
+    predicted_index = np.argmax(predictions)
+    predicted_class = class_names[predicted_index]
+    return predicted_class
+
+#Tensorflow Model Prediction
+# def model_prediction(test_image):
+#     model = tf.keras.models.load_model("trained_plant_disease_model.h5")
+#     image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
+#     input_arr = tf.keras.preprocessing.image.img_to_array(image)
+#     input_arr = np.array([input_arr]) #convert single image to batch
+#     predictions = model.predict(input_arr)
+#     return np.argmax(predictions) #return index of max element
 
 #Sidebar
 st.sidebar.title("Dashboard")
@@ -79,10 +137,37 @@ elif(app_mode=="Disease Recognition"):
     if(st.button("Show Image")):
         st.image(test_image,width=4,use_column_width=True)
     #Predict button
-    if(st.button("Predict")):
+#1 try    
+    # if(st.button("Predict")):
+    #     st.snow()
+    #     st.write("Our Prediction")
+    #     result_index = model_prediction(test_image)
+# yo chai 2 try
+    # if(st.button("Predict")):
+    #     st.snow()
+    #     st.subheader("🌿 Our Prediction")
+    
+    #     result_index = model_prediction(test_image)
+    #     predicted_disease = class_names[result_index]
+    
+    #     st.success(f"✅ Model Prediction: **{predicted_disease}**")
+
+    #     with st.spinner("🧠 Generating precaution tips using Gemini AI..."):
+    #         precaution = get_precaution_from_ai(predicted_disease)
+
+    #     st.info(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
+    if st.button("Predict"):
         st.snow()
-        st.write("Our Prediction")
-        result_index = model_prediction(test_image)
+        st.subheader("🌿 Our Prediction")
+
+        predicted_disease = model_prediction(test_image)
+        st.success(f"✅ Model Prediction: **{predicted_disease}**")
+
+        with st.spinner("🧠 Generating precaution tips using Gemini AI..."):
+            precaution = get_precaution_from_ai(predicted_disease)
+
+        st.info(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
+
         #Reading Labels
         class_name = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
                     'Blueberry___healthy', 'Cherry_(including_sour)___Powdery_mildew', 
