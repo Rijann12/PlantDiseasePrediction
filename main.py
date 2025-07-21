@@ -17,36 +17,17 @@ class_names = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_r
                     'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 
                     'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus',
                       'Tomato___healthy']
-#Precaution 
-# Use the secret key from the .toml file
+
+#Database connection
+import db_utils
+
+db_utils.init_db() 
+
+#Precaution / Prevention tips
+
 genai.configure(api_key="AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY")
 model = genai.GenerativeModel("gemini-1.5-flash")
 
-# def get_precaution_from_ai(disease_name):
-#     prompt = f"What are the prevention and treatment tips for the plant disease called '{disease_name}'?"
-#     response = model.generate_content(prompt)
-#     return response.text
-
-# def get_precaution_from_ai(disease_name):
-#     prompt = f"What are the prevention and treatment tips for the plant disease called '{disease_name}'? Provide a clear, brief list."
-#     try:
-#         response = model.generate_content(prompt)
-#         return response.text
-#     except Exception as e:
-#         return "⚠️ Could not fetch suggestions right now. Please try again later."
-#Yo chai precaution tips lai 
-# def get_precaution_from_ai(disease_name):
-#     try:
-#         res = requests.post(
-#             "http://localhost:5000/get_precaution",
-#             json={"disease": disease_name}
-#         )
-#         if res.status_code == 200:
-#             return res.json()["precaution"]
-#         else:
-#             return "⚠️ Could not fetch suggestions right now. Please try again later."
-#     except:
-#         return "⚠️ Gemini service unreachable. Please check the Flask server."
 import requests
 def get_precaution_from_ai(disease_name):
     try:
@@ -75,18 +56,9 @@ def model_prediction(test_image):
     predicted_class = class_names[predicted_index]
     return predicted_class
 
-#Tensorflow Model Prediction
-# def model_prediction(test_image):
-#     model = tf.keras.models.load_model("trained_plant_disease_model.h5")
-#     image = tf.keras.preprocessing.image.load_img(test_image,target_size=(128,128))
-#     input_arr = tf.keras.preprocessing.image.img_to_array(image)
-#     input_arr = np.array([input_arr]) #convert single image to batch
-#     predictions = model.predict(input_arr)
-#     return np.argmax(predictions) #return index of max element
-
 #Sidebar
 st.sidebar.title("Dashboard")
-app_mode = st.sidebar.selectbox("Select Page",["Home","About","Disease Recognition"])
+app_mode = st.sidebar.selectbox("Select Page",["Home","About","Disease Recognition","View History"])
 
 #Main Page
 if(app_mode=="Home"):
@@ -128,6 +100,28 @@ if(app_mode=="Home"):
      Ready to identify plant diseases?  
     Head over to the **Disease Recognition** tab in the sidebar to get started!
     """)
+elif app_mode == "View History":
+    st.header("📜 Prediction & Precaution History")
+
+    # --- Prediction History ---
+    st.subheader("🧪 Model Prediction History")
+    prediction_data = db_utils.get_prediction_history()
+    if prediction_data:
+        st.table(
+            [{"Disease": row[0], "Timestamp": row[1]} for row in prediction_data]
+        )
+    else:
+        st.info("No prediction history found.")
+
+    # --- Precaution History ---
+    st.subheader("🛡️ Gemini Precaution History")
+    precaution_data = db_utils.get_precaution_history()
+    if precaution_data:
+        st.table(
+            [{"Disease": row[0], "Precaution": row[1], "Timestamp": row[2]} for row in precaution_data]
+        )
+    else:
+        st.info("No precaution history found.")
 
 #About Project
 elif(app_mode=="About"):
@@ -151,25 +145,6 @@ elif(app_mode=="Disease Recognition"):
     if(st.button("Show Image")):
         st.image(test_image,width=4,use_column_width=True)
     #Predict button
-#1 try    
-    # if(st.button("Predict")):
-    #     st.snow()
-    #     st.write("Our Prediction")
-    #     result_index = model_prediction(test_image)
-# yo chai 2 try
-    # if(st.button("Predict")):
-    #     st.snow()
-    #     st.subheader("🌿 Our Prediction")
-    
-    #     result_index = model_prediction(test_image)
-    #     predicted_disease = class_names[result_index]
-    
-    #     st.success(f"✅ Model Prediction: **{predicted_disease}**")
-
-    #     with st.spinner("🧠 Generating precaution tips using Gemini AI..."):
-    #         precaution = get_precaution_from_ai(predicted_disease)
-
-    #     st.info(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
     if st.button("Predict"):
         st.snow()
         st.subheader("🌿 Our Prediction")
@@ -182,23 +157,29 @@ elif(app_mode=="Disease Recognition"):
 
         st.info(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
 
-        #Reading Labels
-        class_name = ['Apple___Apple_scab', 'Apple___Black_rot', 'Apple___Cedar_apple_rust', 'Apple___healthy',
-                    'Blueberry___healthy', 'Cherry_(including_sour)___Powdery_mildew', 
-                    'Cherry_(including_sour)___healthy', 'Corn_(maize)___Cercospora_leaf_spot Gray_leaf_spot', 
-                    'Corn_(maize)___Common_rust_', 'Corn_(maize)___Northern_Leaf_Blight', 'Corn_(maize)___healthy', 
-                    'Grape___Black_rot', 'Grape___Esca_(Black_Measles)', 'Grape___Leaf_blight_(Isariopsis_Leaf_Spot)', 
-                    'Grape___healthy', 'Orange___Haunglongbing_(Citrus_greening)', 'Peach___Bacterial_spot',
-                    'Peach___healthy', 'Pepper,_bell___Bacterial_spot', 'Pepper,_bell___healthy', 
-                    'Potato___Early_blight', 'Potato___Late_blight', 'Potato___healthy', 
-                    'Raspberry___healthy', 'Soybean___healthy', 'Squash___Powdery_mildew', 
-                    'Strawberry___Leaf_scorch', 'Strawberry___healthy', 'Tomato___Bacterial_spot', 
-                    'Tomato___Early_blight', 'Tomato___Late_blight', 'Tomato___Leaf_Mold', 
-                    'Tomato___Septoria_leaf_spot', 'Tomato___Spider_mites Two-spotted_spider_mite', 
-                    'Tomato___Target_Spot', 'Tomato___Tomato_Yellow_Leaf_Curl_Virus', 'Tomato___Tomato_mosaic_virus',
-                      'Tomato___healthy']
-        
+     
         st.success(f"Model is Predicting it's a {predicted_disease}")
         tips = get_precaution_from_ai(predicted_disease)
         st.markdown(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{tips}")
+  # Save prediction and precaution to the database
+        db_utils.save_prediction(predicted_disease)
+        db_utils.save_precaution(predicted_disease, precaution)
+        
+elif app_mode == "View History":
+    st.markdown("## 📜 Prediction History")
+    prediction_history = db_utils.get_prediction_history()
+    if prediction_history:
+        for disease, timestamp in prediction_history:
+            st.markdown(f"- 🧪 **{disease}** – `{timestamp}`")
+    else:
+        st.info("No prediction history available.")
+
+    st.markdown("---")
+    st.markdown("## 🛡️ Precaution History")
+    precaution_history = db_utils.get_precaution_history()
+    if precaution_history:
+        for disease, precaution, timestamp in precaution_history:
+            st.markdown(f"- 🌿 **{disease}** – `{timestamp}`  ↳ _{precaution}_")
+    else:
+        st.info("No precaution history available.")
 
