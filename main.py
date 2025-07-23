@@ -23,28 +23,6 @@ import db_utils
 
 db_utils.init_db() 
 
-#Precaution / Prevention tips
-
-genai.configure(api_key="AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY")
-model = genai.GenerativeModel("gemini-1.5-flash")
-
-import requests
-def get_precaution_from_ai(disease_name):
-    try:
-        res = requests.post(
-            "http://localhost:5000/precaution",
-            json={"disease": disease_name},
-            timeout=10
-        )
-        if res.status_code == 200:
-            return res.json().get("Precaution", "⚠️ Could not parse suggestions.")
-        else:
-            return "⚠️ Could not fetch suggestions right now. Please try again later."
-    except Exception as e:
-        return f"⚠️ Gemini service unreachable: {str(e)}"
-
-
-
 #Model Prediction
 def model_prediction(test_image):
     model = tf.keras.models.load_model("trained_plant_disease_model.h5")
@@ -55,7 +33,23 @@ def model_prediction(test_image):
     predicted_index = np.argmax(predictions)
     predicted_class = class_names[predicted_index]
     return predicted_class
-
+#Precaution / Prevention tips
+genai.configure(api_key="AIzaSyBhZHzQJ2a5Ll35ICau_LRFhSkpbN9r-B0EY")
+model = genai.GenerativeModel("gemini-1.5-flash")
+import requests
+def get_precaution_from_ai(disease_name):
+    try:
+        res = requests.post(
+            "http://localhost:5000/precaution",
+            json={"disease": disease_name},
+            timeout=10
+        )
+        if res.status_code == 200:
+            return res.json().get("Precaution", " Could not parse suggestions.")
+        else:
+            return " Could not fetch suggestions right now. Please try again later."
+    except Exception as e:
+        return f" Gemini service unreachable: {str(e)}"
 #Sidebar
 st.sidebar.title("Dashboard")
 app_mode = st.sidebar.selectbox("Select Page",["Home","About","Disease Recognition","View History"])
@@ -67,33 +61,33 @@ if(app_mode=="Home"):
     image_path = "home_page1.jpeg"
     st.image(image_path,use_column_width=True)
     st.markdown("""
-     ## 👋 Welcome to **DeepLeaf** – Your AI-Powered Plant Health Companion!
+     ## Welcome to **DeepLeaf** – Your AI-Powered Plant Health Companion!
 
     Say goodbye to guesswork and hello to smart farming.  
     **DeepLeaf** uses deep learning to detect plant diseases from images — fast, simple, and accessible to everyone.
 
-    ### 🔍 What is DeepLeaf?
+    ###  What is DeepLeaf?
     DeepLeaf is an intelligent plant disease detection platform that helps users identify crop issues by simply uploading a leaf image. Whether you're growing vegetables at home or managing a farm,
      DeepLeaf gives you quick insights and actionable suggestions to protect your plants.
-    ### 🚀 What Does This System Do?
+    ###  What Does This System Do?
                 
     This platform allows you to:
     -  Upload images of affected plant leaves
     -  Detect potential plant diseases using a trained CNN model
     -  Get instant prevention and treatment suggestions powered by AI
 
-    ### 🔍 How It Works:
+    ###  How It Works:
     1. **Capture or Select a Leaf Image** — Preferably with visible symptoms.
     2. **Upload the Image** in the **Disease Recognition** section.
     3. **Receive Diagnosis** — The model predicts the disease, and you'll get tailored advice.
 
-    ### 🌟 Key Features:
+    ###  Key Features:
     -  **Accurate Predictions** using a Convolutional Neural Network (CNN)
     -  **Real-time Analysis** for faster decision-making
     -  **Integrated AI Suggestions** for remedies and preventive actions
     -  **Simple, Clean Interface** with no login or complex setup required
 
-    ### 💬 Need Help?
+    ###  Need Help?
     Visit the **About** page to learn more about the project, its development team, and the technology stack used.
 
     ---
@@ -101,10 +95,10 @@ if(app_mode=="Home"):
     Head over to the **Disease Recognition** tab in the sidebar to get started!
     """)
 elif app_mode == "View History":
-    st.header("📜 Prediction & Precaution History")
+    st.header(" Prediction & Precaution History")
 
     # --- Prediction History ---
-    st.subheader("🧪 Model Prediction History")
+    st.subheader(" Model Prediction History")
     prediction_data = db_utils.get_prediction_history()
     if prediction_data:
         st.table(
@@ -114,7 +108,7 @@ elif app_mode == "View History":
         st.info("No prediction history found.")
 
     # --- Precaution History ---
-    st.subheader("🛡️ Gemini Precaution History")
+    st.subheader(" Gemini Precaution History")
     precaution_data = db_utils.get_precaution_history()
     if precaution_data:
         st.table(
@@ -122,7 +116,6 @@ elif app_mode == "View History":
         )
     else:
         st.info("No precaution history found.")
-
 #About Project
 elif(app_mode=="About"):
     st.header("About")
@@ -137,7 +130,6 @@ elif(app_mode=="About"):
                 3. validation (17572 images)
 
                 """)
-
 #Prediction Page
 elif(app_mode=="Disease Recognition"):
     st.header("Disease Recognition")
@@ -146,40 +138,38 @@ elif(app_mode=="Disease Recognition"):
         st.image(test_image,width=4,use_column_width=True)
     #Predict button
     if st.button("Predict"):
-        st.snow()
-        st.subheader("🌿 Our Prediction")
+        
+        st.subheader(" Our Prediction")
 
         predicted_disease = model_prediction(test_image)
-        st.success(f"✅ Model Prediction: **{predicted_disease}**")
+        st.success(f" Model Prediction: **{predicted_disease}**")
 
-        with st.spinner("🧠 Generating precaution tips using Gemini AI..."):
+        with st.spinner(" Generating precaution tips using Gemini AI..."):
             precaution = get_precaution_from_ai(predicted_disease)
 
-        st.info(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
+        # st.info(f" **Precaution & Treatment Tips for {predicted_disease}:**\n\n{precaution}")
 
-     
-        st.success(f"Model is Predicting it's a {predicted_disease}")
         tips = get_precaution_from_ai(predicted_disease)
-        st.markdown(f"🛡️ **Precaution & Treatment Tips for {predicted_disease}:**\n\n{tips}")
-  # Save prediction and precaution to the database
+        st.markdown(f" **Precaution & Treatment Tips for {predicted_disease}:**\n\n{tips}")
+# Save prediction and precaution to the database
         db_utils.save_prediction(predicted_disease)
         db_utils.save_precaution(predicted_disease, precaution)
         
 elif app_mode == "View History":
-    st.markdown("## 📜 Prediction History")
+    st.markdown("##  Prediction History")
     prediction_history = db_utils.get_prediction_history()
     if prediction_history:
         for disease, timestamp in prediction_history:
-            st.markdown(f"- 🧪 **{disease}** – `{timestamp}`")
+            st.markdown(f"-  **{disease}** – `{timestamp}`")
     else:
         st.info("No prediction history available.")
 
     st.markdown("---")
-    st.markdown("## 🛡️ Precaution History")
+    st.markdown("##  Precaution History")
     precaution_history = db_utils.get_precaution_history()
     if precaution_history:
         for disease, precaution, timestamp in precaution_history:
-            st.markdown(f"- 🌿 **{disease}** – `{timestamp}`  ↳ _{precaution}_")
+            st.markdown(f"-  **{disease}** – `{timestamp}`  ↳ _{precaution}_")
     else:
         st.info("No precaution history available.")
 
